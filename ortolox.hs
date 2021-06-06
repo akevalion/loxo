@@ -68,10 +68,13 @@ main = do
     let longitud1 = rad (read num::Double)
     num <- getLine
     let latitud1 = rad (read num::Double)
+    num <- getLine
+    let size = read num::Integer
 
+    let distOrto = ortodromica longitud0 latitud0 longitud1 latitud1
     putStrLn ("Ruta "++city0++"-"++city1)
     putStr "Ortodromica: "
-    putStr (show (ortodromica longitud0 latitud0 longitud1 latitud1))
+    putStr (show distOrto)
     putStrLn " Km"
 
     putStr "Rumbo: "
@@ -82,9 +85,25 @@ main = do
     putStr (show (rretorno longitud0 latitud0 longitud1 latitud1))
     putStrLn "º"
 
-    -- edita esta parte
     let alpha = angle longitud0 (ly latitud0) longitud1 (ly latitud1)
-    -- putStrLn (show alpha)
     putStr "Loxodromica: "
-    putStr (show (loxodromica alpha longitud0 latitud0 longitud1 latitud1))
+    let distLoxo = loxodromica alpha longitud0 latitud0 longitud1 latitud1
+    putStr (show distLoxo)
     putStrLn " Km"
+
+    putStr "Rumbo: "
+    putStr (show (deg alpha))
+    putStrLn "º"
+
+    let beta = angle longitud1 (ly latitud1) longitud0 (ly latitud0) 
+    putStr "Rumbo retorno: "
+    putStr (show (deg beta))
+    putStrLn "º"
+
+    putStr "Diferencia: "
+    putStr (show (abs (distOrto - distLoxo)))
+    putStrLn " Km"
+    
+    putStr "Interpolando "
+    putStr (show size)
+    putStrLn " puntos en la ortodromica:"
