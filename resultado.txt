@@ -1,8 +1,0 @@
-Ruta Santiago de Chile-Sidney
-Ortodromica: 11347.436765269616 Km
-Rumbo: -145.4829255763508§
-Rumbo retorno: 145.29143710590705§
-Loxodromica: 12784.812228821855 Km
-Rumbo: -90.20763614640772§
-Rumbo retorno: 89.79236385359228§
-Diferencia: 1437.3754635522382 KmInterpolando 3 puntos en la ortodromica:
