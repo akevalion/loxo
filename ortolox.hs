@@ -78,9 +78,7 @@ newpoint sigma1 sigma2 alpha0 lon0 i = do
     let sigmamid = sigma1 + (diff * i)
     let latmid = alphaZero sigmamid alpha0
     let lonmid = (long01 alpha0 sigmamid) + lon0
-
-    let anglemid = atan2 (tan alpha0) (cos sigmamid)
-    (lonmid, latmid)
+    ((lonAdjust lonmid), latmid)
 
 -- funcion para obtener la coordenada x de un punto
 pointx (x, _) = x
