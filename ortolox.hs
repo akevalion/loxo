@@ -21,71 +21,59 @@ lonAdjust x = if (abs x) <= pi
 
 -- Esta funcion calcula la distancia ortodromica
 -- , basado en la formula del pdf
-ortodromica lon1 lat1 lon2 lat2 lon12 = do
-    let res = (sin lat1*(sin lat2) + (cos lat1)*(cos lat2)*(cos lon12))
-    radius * (acos res)
+ortodromica lon1 lat1 lon2 lat2 lon12 = radius * (acos ((sin lat1*(sin lat2) + (cos lat1)*(cos lat2)*(cos lon12))))
 
 -- calcula el angulo inicial en radianes
-alphaFrom lon1 lat1 lon2 lat2 lon12 = do
-    let d1 = (cos lat2) * (sin lon12)
-    let d2 = (cos lat1) * (sin lat2) - ((sin lat1) * (cos lat2) * (cos lon12))
-    atan2 d1 d2
+alphaFrom lon1 lat1 lon2 lat2 lon12 = atan2 ((cos lat2) * (sin lon12)) ((cos lat1) * (sin lat2) - ((sin lat1) * (cos lat2) * (cos lon12)))
 
 -- calucula el angulo final en radianes
-alphaTo lon1 lat1 lon2 lat2 lon12 = do
-    let d1 = (cos lat1) * (sin lon12)
-    let d2 = ((sin lat2) * (cos lat1) * (cos lon12)) - ((cos lat2)* (sin lat1))
-    atan2 d1 d2 
+alphaTo lon1 lat1 lon2 lat2 lon12 = atan2 ((cos lat1) * (sin lon12)) (((sin lat2) * (cos lat1) * (cos lon12)) - ((cos lat2)* (sin lat1)))
     --0-(atan2 d1 (0-d2)) -- sin esto saca -34.708562894092964
     -- atan2 d1 d2 es el resultado correcto
 
--- esta funcion calcula 
+-- esta funcion ajusta alpha
 adjustAlpha x = if x < 0 then x + pi else x - pi
+
+-- esta funcion ajusta el divisor para la funcion angle
+divisorAlpha d =  if (abs d) <= pi 
+    then d 
+    else if d < (0-pi)
+        then d + (2 * pi)
+        else d - (2 * pi)
 
 -- esta funcion calcula el anngulo alpha
 -- https://planetcalc.com/713/
-angle x0 y0 x1 y1 = do
-    let d = x1 - x0
-    let div = if (abs d) <= pi 
-        then d 
-        else if d < (0-pi)
-            then d + (2 * pi)
-            else d - (2 * pi)
-    atan2 div (y1 - y0)
+angle x0 y0 x1 y1 = atan2 (divisorAlpha (x1-x0)) (y1 - y0)
 
 -- esta funcion calcula la distancia loxodromica
-loxodromica alpha lon0 lat0 lon1 lat1 lon12 = do
-    let div = if lat1 == lat0 
-        then abs (lon12 * (cos lat0))
-        else abs ( (lat1 - lat0)/ (cos alpha) )
-    radius * div
+loxodromica alpha lon0 lat0 lon1 lat1 lon12 = radius * (if lat1 == lat0 
+    then abs (lon12 * (cos lat0))
+    else abs ( (lat1 - lat0)/ (cos alpha) ))
 
 -- esta funcion optiene alpha0 
-alphaZero alpha1 lat1 = do
-    let d1 = (cos lat1) * (sin alpha1)
-    let d2 = sqrt (((cos alpha1)**2) + ((sin alpha1) ** 2) * ((sin lat1)**2))
-    atan2 d1 d2
+alphaZero alpha1 lat1 = atan2 ((cos lat1) * (sin alpha1)) (sqrt (((cos alpha1)**2) + ((sin alpha1) ** 2) * ((sin lat1)**2)))
 
 -- se calcula la longitud 01 mencionada en el articulo de wikipedia
-long01 alpha0 sigma1 = do
-    let d1 = (sin alpha0) * (sin sigma1)
-    let d2 = cos sigma1
-    atan2 d1 d2
+long01 alpha0 sigma1 = atan2 ((sin alpha0) * (sin sigma1)) (cos sigma1)
+
 -- esta funcion crea un nuevo punto intermedio basado en el valor de i
 -- i esta entre 0 y 1
-newpoint sigma1 sigma2 alpha0 lon0 i = do 
-    let diff = sigma2 - sigma1
-    let sigmamid = sigma1 + (diff * i)
-    let latmid = alphaZero sigmamid alpha0
-    let lonmid = (long01 alpha0 sigmamid) + lon0
-    ((lonAdjust lonmid), latmid)
+newpoint sigma1 sigma2 alpha0 lon0 i = newpoint2 (sigmamid sigma1 sigma2 i) alpha0 lon0
+
+-- sigmamid calcula el sigma medio en un porcentaje i
+sigmamid sigma1 sigma2 i = sigma1 + ((sigma2 - sigma1) * i)
+
+-- funcion auxiliar para crear el nuevo punto
+newpoint2 sigma alpha0 lon0 = ((lonAdjust ((long01 alpha0 sigma)+lon0)), (alphaZero sigma alpha0) )
 
 -- funcion para obtener la coordenada x de un punto
 pointx (x, _) = x
+
 -- funcion para obtener la coordeanda y de un punto
 pointy (_, y) = y
 
 -- muestra la lista de angulos entre los diferentes puntos
+-- aca es necesario el do por el putStr
 showSimple list str1 str2 = do
     let h = head list
     putStr (show h)
@@ -93,32 +81,29 @@ showSimple list str1 str2 = do
         then putStrLn str2
         else showSimpleComma list str1 str2
 -- funcion de utilidad para mostrar comas entre los rumbos
+-- aca es necesario el do por el putStr
 showSimpleComma list str1 str2= do
     putStr str1
     showSimple (tail list) str1 str2
 
 -- funcion que calcula los rumbos entre los puntos intermedios
-rumbosEntrePoints p1 list = do
-    let p2 = head list
-    let res = angle (pointx p1) (ly (pointy p1)) (pointx p2) (ly (pointy p2))
-    if (length list) == 1 
-        then [res]
-        else res:(rumbosEntrePoints p2 (tail list))
+rumbosEntrePoints p1 list = rumbosEntrePoints2 list (angle (pointx p1) (ly (pointy p1)) (pointx (head list)) (ly (pointy (head list))))
+
+-- funcion auxiliar de rumbosEntrePoints
+rumbosEntrePoints2 list res = if (length list) == 1
+    then [res]
+    else res:(rumbosEntrePoints (head list) (tail list))
 
 -- funcion que calcula las distancias entres los puntos intermedios
--- funcina calculando el angulo o rumbos usados
-distanciasEntrePoints p1 list = do
-    let p2 = head list
-    let lon1 = pointx p1
-    let lat1 = pointy p1
-    let lon2 = pointx p2
-    let lat2 = pointy p2
-    let lon12 = lonAdjust (lon2 - lon1)
-    let alpha = angle lon1 (ly lat1) lon2 (ly lat2)
-    let loxo = loxodromica alpha lon1 lat1 lon2 lat2 lon12
-    if (length list) == 1 
-        then [loxo]
-        else loxo:(distanciasEntrePoints p2 (tail list))
+-- funciona calculando el angulo o rumbos usados
+distanciasEntrePoints p1 list = distanciasEntrePoints2 (calculateLoxo (pointx p1) (pointy p1) (pointx (head list)) (pointy (head list))) list
+-- metodo auxilair para calcular la distancia loxodormica entre los puntos
+calculateLoxo lon1 lat1 lon2 lat2 = loxodromica (angle lon1 (ly lat1) lon2 (ly lat2)) lon1 lat1 lon2 lat2 (lonAdjust (lon2 - lon1))
+-- funcion auxiliar
+
+distanciasEntrePoints2 loxo list = if (length list) == 1 
+    then [loxo]
+    else loxo:(distanciasEntrePoints (head list) (tail list))
 
 
 -- Esta es la funcion principal
