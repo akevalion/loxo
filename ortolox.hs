@@ -1,3 +1,5 @@
+import System.Environment  
+import System.IO
 -- Esta funcion convierte grados a radianes
 radius = 6371
 
@@ -73,18 +75,13 @@ pointx (x, _) = x
 pointy (_, y) = y
 
 -- muestra la lista de angulos entre los diferentes puntos
--- aca es necesario el do por el putStr
-showSimple list str1 str2 = do
-    let h = head list
-    putStr (show h)
-    if (length list) == 1
-        then putStrLn str2
-        else showSimpleComma list str1 str2
+showSimple list str1 str2 = (show (head list)) ++ (if (length list) == 1
+    then str2++"\n"
+    else showSimpleComma list str1 str2)
+
 -- funcion de utilidad para mostrar comas entre los rumbos
 -- aca es necesario el do por el putStr
-showSimpleComma list str1 str2= do
-    putStr str1
-    showSimple (tail list) str1 str2
+showSimpleComma list str1 str2 = str1 ++ (showSimple (tail list) str1 str2)
 
 -- funcion que calcula los rumbos entre los puntos intermedios
 rumbosEntrePoints p1 list = rumbosEntrePoints2 list (angle (pointx p1) (ly (pointy p1)) (pointx (head list)) (ly (pointy (head list))))
@@ -109,23 +106,27 @@ distanciasEntrePoints2 loxo list = if (length list) == 1
 -- Esta es la funcion principal
 -- lee la longitud y latitud de los dos paises
 -- luego calcula los valores del ejercio
+main :: IO ()
 main = do
-    city1 <- getLine
-    num <- getLine
+    args <- getArgs
+    fileReference <- openFile (head args) ReadMode
+    city1 <- hGetLine fileReference
+    num <- hGetLine fileReference
     --longitud 1
     let lon1 = rad (read num::Double)
-    num <- getLine
+    num <- hGetLine fileReference
     --latitud 1
     let lat1 = rad (read num::Double)
 
-    city2 <- getLine
-    num <- getLine
+    city2 <- hGetLine fileReference
+    num <- hGetLine fileReference
     let lon2 = rad (read num::Double)
-    num <- getLine
+    num <- hGetLine fileReference
     let lat2 = rad (read num::Double)
-    num <- getLine
+    num <- hGetLine fileReference
     let size = read num::Double
     let lon12 = lonAdjust (lon2 - lon1)
+    hClose fileReference
 
     let distOrto = ortodromica lon1 lat1 lon2 lat2 lon12
     putStrLn ("Ruta "++city1++"-"++city2)
@@ -189,9 +190,9 @@ main = do
     -- esto genera los rumbos o angulos
     let alphas = rumbosEntrePoints (head points) (tail points)
     let distancias = distanciasEntrePoints (head points) (tail points)
-    showSimple distancias " Km, " " Km."
+    putStr (showSimple distancias " Km, " " Km.")
     putStr "Rumbos: "
-    showSimple (map deg alphas) "º," "º."
+    putStr (showSimple (map deg alphas) "º," "º.")
     
     putStr "Diferencia: "
     let diferencia = abs (distOrto- (foldl (+) 0 distancias))
