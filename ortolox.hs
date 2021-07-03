@@ -109,7 +109,11 @@ distanciasEntrePoints2 loxo list = if (length list) == 1
 main :: IO ()
 main = do
     args <- getArgs
+    if (length args) == 0
+        then putStrLn "Debe ejecutar el programa con un argumento, ejemplo:\nortolox.exe scs.txt"
+        else do
     fileReference <- openFile (head args) ReadMode
+    
     city1 <- hGetLine fileReference
     num <- hGetLine fileReference
     --longitud 1
@@ -128,47 +132,39 @@ main = do
     let lon12 = lonAdjust (lon2 - lon1)
     hClose fileReference
 
+    let sRutaDesdeHasta = "Ruta "++city1++"-"++city2++"\n"
+    putStr sRutaDesdeHasta
+
     let distOrto = ortodromica lon1 lat1 lon2 lat2 lon12
-    putStrLn ("Ruta "++city1++"-"++city2)
-    putStr "Ortodromica: "
-    putStr (show distOrto)
-    putStrLn " Km"
+    let sOrtodromica = "Ortodromica: "++(show distOrto)++" Km\n"
+    putStr sOrtodromica
 
     let alpha1 = alphaFrom lon1 lat1 lon2 lat2 lon12
-    putStr "Rumbo: "
-    putStr (show (deg alpha1))
-    putStrLn "º"
+    let sRumbo = "Rumbo: "++(show (deg alpha1))++"º\n"
+    putStr sRumbo
 
     let alpha2 = alphaTo lon1 lat1 lon2 lat2 lon12
-    putStr "Rumbo retorno: "
-    putStr (show ((deg (adjustAlpha alpha2))) )
-    putStrLn "º"
+    let sRumboRetorno = "Rumbo retorno: "++(show ((deg (adjustAlpha alpha2))))++"º\n"
+    putStr sRumboRetorno
 
     let alpha = angle lon1 (ly lat1) lon2 (ly lat2)
     let distLoxo = loxodromica alpha lon1 lat1 lon2 lat2 lon12
     let beta = angle lon2 (ly lat2) lon1 (ly lat1) 
 
-    putStr "Loxodromica: "
-    putStr (show distLoxo)
-    putStrLn " Km"
+    let sLoxodromica = "Loxodromica: "++(show distLoxo)++" Km\n"
+    putStr sLoxodromica
 
-    putStr "Rumbo: "
-    putStr (show (deg alpha))
-    putStrLn "º"
+    let sRumboLoxo = "Rumbo: "++(show (deg alpha))++"º\n"
+    putStr sRumboLoxo
 
-    putStr "Rumbo retorno: "
-    putStr (show (deg beta))
-    putStrLn "º"
+    let sRumboRetornoLoxo = "Rumbo retorno: "++(show (deg beta))++"º\n"
+    putStr sRumboRetornoLoxo
 
-    putStr "Diferencia: "
-    putStr (show (abs (distOrto - distLoxo)))
-    putStrLn " Km"
+    let sDiferencia = "Diferencia: "++(show (abs (distOrto - distLoxo)))++" Km\n"
+    putStr sDiferencia
 
-    putStr "Interpolando "
-    putStr (show (round size))
-    putStrLn " puntos en la ortodromica:"
-
-    -- punto medio 
+    let sInterpolando = "Interpolando "++(show (round size))++" puntos en la ortodromica:\n"
+    putStr sInterpolando
 
     let alpha0 = alphaZero alpha1 lat1
     let sigma1 = atan2 (tan lat1) (cos alpha1)
@@ -184,18 +180,23 @@ main = do
     let scales = [0, inc .. 1]
     -- esto genera los nuevos puntos de control, con los angulos
     let points = map (newpoint sigma1 sigma2 alpha0 lon0) scales
-    print points
-    putStrLn "Poli-Loxodromica: "
-    putStr "Distancias: "
+    putStr (show points)
     -- esto genera los rumbos o angulos
     let alphas = rumbosEntrePoints (head points) (tail points)
     let distancias = distanciasEntrePoints (head points) (tail points)
-    putStr (showSimple distancias " Km, " " Km.")
-    putStr "Rumbos: "
-    putStr (showSimple (map deg alphas) "º," "º.")
-    
-    putStr "Diferencia: "
+
+    let sDistancias = "\nPoli-Loxodromica:\nDistancias: "++(showSimple distancias " Km, " " Km.")
+    putStr sDistancias
+    let sRumbos = "Rumbos: "++(showSimple (map deg alphas) "º," "º.")
+    putStr sRumbos
+
     let diferencia = abs (distOrto- (foldl (+) 0 distancias))
-    putStr (show diferencia)
-    putStrLn " Km"
+    let sDiferenciaFinal = "Diferencia: "++(show diferencia)++" Km\n"
+    putStr sDiferenciaFinal
+
+    let contents = (sRutaDesdeHasta++sOrtodromica++sRumbo++sRumboRetorno ++sLoxodromica++sRumboLoxo++sRumboRetornoLoxo++sDiferencia++sInterpolando ++(show points)++sDistancias++sRumbos++sDiferenciaFinal)
+    --aca se escribe el contenido del archivo que estara en codificacion ansi motivo por el cual los simbolos de los angulos no se leen correctamente
+    --setLocaleEncoding =<< getFileSystemEncoding
+    writeFile "resultados.txt" contents
+    
 
